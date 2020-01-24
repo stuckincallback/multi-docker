@@ -1,0 +1,22 @@
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t stuckincallback/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true stuckincallback/react-test npm test -- --coverage
+
+after_success:
+    - docker build -t stuckincallback/multi-client ./client
+    - docker build -t stuckincallback/multi-nginx ./nginx
+    - docker build -t stuckincallback/multi-server ./server
+    - docker build -t stuckincallback/multi-worker ./worker
+
+    # log into docker cli
+    - echo "$DOCKER_PASSWORD" | docker login -u $DOCKER_ID --password-stdin
+    - docker push stuckincallback/multi-client
+    - docker push stuckincallback/multi-nginx
+    - docker push stuckincallback/multi-server
+    - docker push stuckincallback/multi-worker
